@@ -1,8 +1,13 @@
-import java.nio.file.Path
+package gatling
+
+import java.nio.file.{Path, Paths}
 
 import io.gatling.commons.util.PathHelper._
+import org.apache.lucene.index.{DirectoryReader, Term}
+import org.apache.lucene.search.{IndexSearcher, TermQuery}
+import org.apache.lucene.store.FSDirectory
 
-object IDEPathHelper {
+object PathHelper {
 
   val gatlingConfUrl: Path = getClass.getClassLoader.getResource("gatling.conf").toURI
   val projectRootDir = gatlingConfUrl.ancestor(3)
@@ -19,4 +24,6 @@ object IDEPathHelper {
   val resultsDirectory = mavenTargetDirectory / "gatling"
 
   val recorderConfigFile = mavenResourcesDirectory / "recorder.conf"
+  val luceneRoot = Paths.get(System.getProperty("lucene.root", (projectRootDir / "data").toString))
+
 }

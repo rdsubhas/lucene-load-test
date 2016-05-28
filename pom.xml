@@ -8,11 +8,30 @@
 
     <properties>
         <encoding>UTF-8</encoding>
-        <gatling.version>2.2.0</gatling.version>
+        <scala-library.version>2.11.8</scala-library.version>
         <scala-maven-plugin.version>3.2.2</scala-maven-plugin.version>
+        <gatling.version>2.2.0</gatling.version>
+        <lucene.version>5.5.0</lucene.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala-library.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-app</artifactId>
+            <version>${gatling.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-recorder</artifactId>
+            <version>${gatling.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.gatling.highcharts</groupId>
             <artifactId>gatling-charts-highcharts</artifactId>
@@ -20,9 +39,19 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-            <version>2.11.8</version>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-backward-codecs</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>${lucene.version}</version>
         </dependency>
     </dependencies>
 
