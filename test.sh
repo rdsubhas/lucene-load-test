@@ -1,5 +1,5 @@
-TEST_OPTS="-Xms512m -Dgat.threads=1 -Dgat.users=100 -Dgat.duration=1"
-TEST_PROCS=1
+TEST_OPTS="-Xms512m -Dgat.threads=4 -Dgat.users=100 -Dgat.duration=4"
+TEST_PROCS=4
 
 for i in "$@"; do
   case $i in

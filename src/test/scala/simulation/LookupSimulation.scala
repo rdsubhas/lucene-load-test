@@ -20,7 +20,7 @@ class LookupSimulation extends Simulation {
   val users = parseInt(System.getProperty("gat.users", "1000"))
   val duration = parseInt(System.getProperty("gat.duration", "1")).minutes
 
-  val action = if (true || System.getProperty("gat.grpc", "") == "true")
+  val action = if (System.getProperty("gat.grpc", "") == "true")
     new LookupGrpcActionBuilder
   else
     new LookupDiskActionBuilder
@@ -43,17 +43,18 @@ class LookupAction(val name: String, val lookup: String => Int, val statsEngine:
   extends ChainableAction with NameGen with ExitableAction {
 
   val hit_name = s"${name}-doc-hit"
-  val hit_code = Some("404")
+  val hit_code = Some("200")
   val miss_name = s"${name}-doc-miss"
-  val miss_code = Some("200")
+  val miss_code = Some("404")
   val paths = List("part1", "part2", "part3", "part4")
 
   override def execute(session: Session): Unit = {
-    val startTime = System.currentTimeMillis
     val docId = paths.map(p => session(p).as[String]).dropWhile(_.isEmpty).mkString("/")
-    val doc = lookup(docId)
 
+    val startTime = System.currentTimeMillis
+    val doc = lookup(docId)
     val endTime = System.currentTimeMillis
+
     statsEngine.logResponse(
       session,
       if (doc >= 0) hit_name else miss_name,
