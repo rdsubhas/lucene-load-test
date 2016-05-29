@@ -3,7 +3,7 @@ package grpc
 import java.util.logging.Logger
 
 import grpc.Lucene.{LookupReply, LookupRequest}
-import io.grpc.ServerBuilder
+import io.grpc.netty.NettyServerBuilder
 import io.grpc.stub.StreamObserver
 
 object GrpcServer {
@@ -11,9 +11,10 @@ object GrpcServer {
   val Log = Logger.getAnonymousLogger
 
   def main(args: Array[String]): Unit = {
-    val builder = ServerBuilder.forPort(Port)
-    builder.addService(new LookupServiceImpl())
-    val server = builder.build()
+    val server = NettyServerBuilder
+        .forPort(Port)
+        .addService(new LookupServiceImpl)
+        .build
     server.start()
 
     Log.info(s"gRPC Server running on ${Port}")
@@ -25,7 +26,9 @@ object GrpcServer {
 
     override def lookup(request: LookupRequest, responseObserver: StreamObserver[LookupReply]): Unit = {
       val doc = reader.lookup(request.getDocId)
-      LookupReply.newBuilder.setDocId(doc.getOrElse(0)).build
+      val response = LookupReply.newBuilder.setDocId(doc).build
+      responseObserver.onNext(response)
+      responseObserver.onCompleted()
     }
   }
 }

@@ -12,15 +12,15 @@ class LuceneReader {
   val reader = DirectoryReader.open(FSDirectory.open(luceneRoot))
   val searcher = new IndexSearcher(reader)
 
-  def lookup(docId: String): Option[Int] = {
+  def lookup(docId: String): Int = {
     val query = new TermQuery(new Term("id", docId))
     val hits = searcher.search(query, 1)
     if (hits.totalHits > 0) {
       val hit = hits.scoreDocs(0)
       val doc = reader.document(hit.doc)
-      Some(hit.doc)
+      hit.doc
     } else {
-      None
+      -1
     }
   }
 }
