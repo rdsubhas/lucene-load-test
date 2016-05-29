@@ -2,6 +2,7 @@ package simulation
 
 import java.lang.Integer.parseInt
 
+import grpc.Lucene.LookupReply
 import grpc.{GrpcServer, LookupServiceGrpc, Lucene}
 import io.gatling.commons.stats.OK
 import io.gatling.core.Predef._
@@ -12,10 +13,11 @@ import io.gatling.core.stats.message.ResponseTimings
 import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
 import io.grpc.ManagedChannelBuilder
+import io.grpc.stub.StreamObserver
 
 import scala.concurrent.duration._
 
-class LookupGrpcBlockingSimulation extends Simulation {
+class LookupAsync extends Simulation {
   val threads = parseInt(System.getProperty("gat.threads", "10"))
   val users = parseInt(System.getProperty("gat.users", "1000"))
   val duration = parseInt(System.getProperty("gat.duration", "1")).minutes
@@ -23,7 +25,7 @@ class LookupGrpcBlockingSimulation extends Simulation {
   val host = System.getProperty("gat.host", "localhost")
   val channel = ManagedChannelBuilder.forAddress(host, GrpcServer.Port)
     .usePlaintext(true).build()
-  val client = LookupServiceGrpc.newBlockingStub(channel)
+  val client = LookupServiceGrpc.newStub(channel)
 
   val scenarios = (1 to threads).toList.map(n => {
     scenario(s"lookup-${n}")
@@ -31,7 +33,7 @@ class LookupGrpcBlockingSimulation extends Simulation {
       .feed(csv("part2.csv").random.circular)
       .feed(csv("part3.csv").random.circular)
       .feed(csv("part4.csv").random.circular)
-      .exec(new LookupGrpcBlockingActionBuilder(client))
+      .exec(new LookupAsyncActionBuilder(client))
       .inject(constantUsersPerSec(users) during(duration))
   })
 
@@ -39,13 +41,13 @@ class LookupGrpcBlockingSimulation extends Simulation {
 
 }
 
-class LookupGrpcBlockingAction(val client: LookupServiceGrpc.LookupServiceBlockingStub, val statsEngine: StatsEngine, val next: Action)
+class LookupAsyncAction(val client: LookupServiceGrpc.LookupServiceStub, val statsEngine: StatsEngine, val next: Action)
   extends ChainableAction with NameGen with ExitableAction {
 
-  val name = "lookup-grpc"
-  val hit_name = s"${name}-hit"
+  val name = "lookup-async"
+  val hit_name = "hit"
   val hit_code = Some("200")
-  val miss_name = s"${name}-miss"
+  val miss_name = "miss"
   val miss_code = Some("404")
   val paths = List("part1", "part2", "part3", "part4")
 
@@ -54,26 +56,33 @@ class LookupGrpcBlockingAction(val client: LookupServiceGrpc.LookupServiceBlocki
 
     val startTime = System.currentTimeMillis
     val request = Lucene.LookupRequest.newBuilder.setDocId(docId).build
-    val response = client.lookup(request)
-    val doc = response.getDocId
-    val endTime = System.currentTimeMillis
+    client.lookup(request, new StreamObserver[LookupReply] {
+      override def onError(throwable: Throwable): Unit = {
+        next ! session
+      }
+      override def onCompleted(): Unit = {
+        next ! session
+      }
+      override def onNext(response: LookupReply): Unit = {
+        val doc = response.getDocId
+        val endTime = System.currentTimeMillis
 
-    statsEngine.logResponse(
-      session,
-      if (doc >= 0) hit_name else miss_name,
-      new ResponseTimings(startTime, endTime),
-      OK,
-      if (doc >= 0) hit_code else miss_code,
-      None,
-      List(docId)
-    )
-
-    next ! session
+        statsEngine.logResponse(
+          session,
+          if (doc >= 0) hit_name else miss_name,
+          new ResponseTimings(startTime, endTime),
+          OK,
+          if (doc >= 0) hit_code else miss_code,
+          None,
+          List(docId)
+        )
+      }
+    })
   }
 }
 
-class LookupGrpcBlockingActionBuilder(val client: LookupServiceGrpc.LookupServiceBlockingStub) extends ActionBuilder {
+class LookupAsyncActionBuilder(val client: LookupServiceGrpc.LookupServiceStub) extends ActionBuilder {
   override def build(ctx: ScenarioContext, next: Action): Action = {
-    new LookupGrpcBlockingAction(client, ctx.coreComponents.statsEngine, next)
+    new LookupAsyncAction(client, ctx.coreComponents.statsEngine, next)
   }
 }

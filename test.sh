@@ -1,5 +1,5 @@
-TEST_OPTS="-Xms512m -Dgat.threads=4 -Dgat.users=100 -Dgat.duration=4"
-TEST_PROCS=4
+export JAVA_TOOL_OPTIONS="-Xms512m -Dgat.threads=4 -Dgat.users=100 -Dgat.duration=4"
+export TEST_PROCS=4
 
 for i in "$@"; do
   case $i in
@@ -8,16 +8,19 @@ for i in "$@"; do
     exit 0
     ;;
 
-  local)
+  disk)
     mvn compile
-    export JAVA_TOOL_OPTIONS="$TEST_OPTS -Dgat.grpc=false"
-    seq $TEST_PROCS | xargs -I {} -P $TEST_PROCS mvn gatling:test
+    seq $TEST_PROCS | xargs -I {} -P $TEST_PROCS mvn -Dsimulation=LookupLocal gatling:test
     ;;
 
-  remote)
+  blocking)
     mvn compile
-    export JAVA_TOOL_OPTIONS="$TEST_OPTS -Dgat.grpc=true"
-    seq $TEST_PROCS | xargs -I {} -P $TEST_PROCS mvn gatling:test
+    seq $TEST_PROCS | xargs -I {} -P $TEST_PROCS mvn -Dsimulation=LookupBlocking gatling:test
+    ;;
+
+  async)
+    mvn compile
+    seq $TEST_PROCS | xargs -I {} -P $TEST_PROCS mvn -Dsimulation=LookupAsync gatling:test
     ;;
 
   *)

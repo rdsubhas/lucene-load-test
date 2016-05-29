@@ -2,7 +2,7 @@ package simulation
 
 import java.lang.Integer.parseInt
 
-import grpc.LuceneReader
+import grpc.{GrpcServer, LookupServiceGrpc, Lucene}
 import io.gatling.commons.stats.OK
 import io.gatling.core.Predef._
 import io.gatling.core.action.builder.ActionBuilder
@@ -11,15 +11,19 @@ import io.gatling.core.stats.StatsEngine
 import io.gatling.core.stats.message.ResponseTimings
 import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
+import io.grpc.ManagedChannelBuilder
 
 import scala.concurrent.duration._
 
-class LookupDiskSimulation extends Simulation {
+class LookupBlocking extends Simulation {
   val threads = parseInt(System.getProperty("gat.threads", "10"))
   val users = parseInt(System.getProperty("gat.users", "1000"))
   val duration = parseInt(System.getProperty("gat.duration", "1")).minutes
 
-  val reader = new LuceneReader
+  val host = System.getProperty("gat.host", "localhost")
+  val channel = ManagedChannelBuilder.forAddress(host, GrpcServer.Port)
+    .usePlaintext(true).build()
+  val client = LookupServiceGrpc.newBlockingStub(channel)
 
   val scenarios = (1 to threads).toList.map(n => {
     scenario(s"lookup-${n}")
@@ -27,7 +31,7 @@ class LookupDiskSimulation extends Simulation {
       .feed(csv("part2.csv").random.circular)
       .feed(csv("part3.csv").random.circular)
       .feed(csv("part4.csv").random.circular)
-      .exec(new LookupDiskActionBuilder(reader))
+      .exec(new LookupBlockingActionBuilder(client))
       .inject(constantUsersPerSec(users) during(duration))
   })
 
@@ -35,13 +39,13 @@ class LookupDiskSimulation extends Simulation {
 
 }
 
-class LookupDiskAction(val reader: LuceneReader, val statsEngine: StatsEngine, val next: Action)
+class LookupBlockingAction(val client: LookupServiceGrpc.LookupServiceBlockingStub, val statsEngine: StatsEngine, val next: Action)
   extends ChainableAction with NameGen with ExitableAction {
 
-  val name = "lookup-disk"
-  val hit_name = s"${name}-hit"
+  val name = "lookup-blocking"
+  val hit_name = "hit"
   val hit_code = Some("200")
-  val miss_name = s"${name}-miss"
+  val miss_name = "miss"
   val miss_code = Some("404")
   val paths = List("part1", "part2", "part3", "part4")
 
@@ -49,7 +53,9 @@ class LookupDiskAction(val reader: LuceneReader, val statsEngine: StatsEngine, v
     val docId = paths.map(p => session(p).as[String]).dropWhile(_.isEmpty).mkString("/")
 
     val startTime = System.currentTimeMillis
-    val doc = reader.lookup(docId)
+    val request = Lucene.LookupRequest.newBuilder.setDocId(docId).build
+    val response = client.lookup(request)
+    val doc = response.getDocId
     val endTime = System.currentTimeMillis
 
     statsEngine.logResponse(
@@ -66,8 +72,8 @@ class LookupDiskAction(val reader: LuceneReader, val statsEngine: StatsEngine, v
   }
 }
 
-class LookupDiskActionBuilder(val reader: LuceneReader) extends ActionBuilder {
+class LookupBlockingActionBuilder(val client: LookupServiceGrpc.LookupServiceBlockingStub) extends ActionBuilder {
   override def build(ctx: ScenarioContext, next: Action): Action = {
-    new LookupDiskAction(reader, ctx.coreComponents.statsEngine, next)
+    new LookupBlockingAction(client, ctx.coreComponents.statsEngine, next)
   }
 }
