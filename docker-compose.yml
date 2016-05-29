@@ -12,7 +12,26 @@ services:
   local:
     build: .
     working_dir: /src
-    command: "/usr/bin/mvn test"
+    command: "/usr/bin/mvn -Dsimulation=LookupLocal test"
+    env_file: .env
+    volumes:
+      - ".:/src"
+      - "~/.m2:/root/.m2"
+
+  blocking:
+    build: .
+    working_dir: /src
+    command: "/usr/bin/mvn -Dsimulation=LookupBlocking test"
+    env_file: .env
+    volumes:
+      - ".:/src"
+      - "~/.m2:/root/.m2"
+
+  async:
+    build: .
+    working_dir: /src
+    command: "/usr/bin/mvn -Dsimulation=LookupAsync test"
+    env_file: .env
     volumes:
       - ".:/src"
       - "~/.m2:/root/.m2"

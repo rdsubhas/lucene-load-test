@@ -19,7 +19,7 @@ class LookupBlocking extends Simulation {
   val threads = parseInt(Option(System.getenv("TEST_THREADS")).getOrElse("10"))
   val users = parseInt(Option(System.getenv("TEST_USERS")).getOrElse("1000"))
   val duration = parseInt(Option(System.getenv("TEST_MINUTES")).getOrElse("1")).minutes
-  val host = Option(System.getenv("TEST_HOST")).getOrElse("localhost")
+  val host = Option(System.getenv("TEST_SERVER")).getOrElse("localhost")
 
   val channel = ManagedChannelBuilder.forAddress(host, GrpcServer.Port)
     .usePlaintext(true).build()
