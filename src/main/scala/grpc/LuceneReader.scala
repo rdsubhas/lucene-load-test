@@ -7,7 +7,7 @@ import org.apache.lucene.search.{IndexSearcher, TermQuery}
 import org.apache.lucene.store.FSDirectory
 
 class LuceneReader {
-  val projectRoot = Paths.get(getClass.getClassLoader.getResource("lucene.proto").getPath).resolve("../../..").toRealPath()
+  val projectRoot = Paths.get(getClass.getClassLoader.getResource("lucene.proto").getPath).resolveSibling("../..").toRealPath()
   val luceneRoot = projectRoot.resolve(System.getProperty("lucene.root", "data"))
   val reader = DirectoryReader.open(FSDirectory.open(luceneRoot))
   val searcher = new IndexSearcher(reader)
