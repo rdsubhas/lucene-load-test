@@ -1,0 +1,18 @@
+---
+version: '2'
+services:
+  server:
+    build: .
+    working_dir: /src
+    command: "/usr/bin/mvn compile exec:java"
+    volumes:
+      - ".:/src"
+      - "~/.m2:/root/.m2"
+
+  local:
+    build: .
+    working_dir: /src
+    command: "/usr/bin/mvn test"
+    volumes:
+      - ".:/src"
+      - "~/.m2:/root/.m2"

@@ -18,21 +18,21 @@ import io.grpc.stub.StreamObserver
 import scala.concurrent.duration._
 
 class LookupAsync extends Simulation {
-  val threads = parseInt(System.getProperty("gat.threads", "10"))
-  val users = parseInt(System.getProperty("gat.users", "1000"))
-  val duration = parseInt(System.getProperty("gat.duration", "1")).minutes
+  val threads = parseInt(Option(System.getenv("TEST_THREADS")).getOrElse("10"))
+  val users = parseInt(Option(System.getenv("TEST_USERS")).getOrElse("1000"))
+  val duration = parseInt(Option(System.getenv("TEST_MINUTES")).getOrElse("1")).minutes
+  val host = Option(System.getenv("TEST_HOST")).getOrElse("localhost")
 
-  val host = System.getProperty("gat.host", "localhost")
   val channel = ManagedChannelBuilder.forAddress(host, GrpcServer.Port)
     .usePlaintext(true).build()
   val client = LookupServiceGrpc.newStub(channel)
 
   val scenarios = (1 to threads).toList.map(n => {
     scenario(s"lookup-${n}")
-      .feed(csv("part1.csv").random.circular)
-      .feed(csv("part2.csv").random.circular)
-      .feed(csv("part3.csv").random.circular)
-      .feed(csv("part4.csv").random.circular)
+      .feed(csv("part1.csv").random)
+      .feed(csv("part2.csv").random)
+      .feed(csv("part3.csv").random)
+      .feed(csv("part4.csv").random)
       .exec(new LookupAsyncActionBuilder(client))
       .inject(constantUsersPerSec(users) during(duration))
   })
