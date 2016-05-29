@@ -15,6 +15,7 @@
         <grpc.version>0.14.0</grpc.version>
         <protobuf.version>3.0.0-beta-3</protobuf.version>
         <netty.version>4.1.0.Final</netty.version>
+        <gatling.core.simulation>simulation.LookupDiskSimulation</gatling.core.simulation>
     </properties>
 
     <dependencies>
@@ -158,6 +159,7 @@
                 <version>${gatling.version}</version>
                 <configuration>
                     <disableCompiler>true</disableCompiler>
+                    <simulationClass>${gatling.core.simulation}</simulationClass>
                 </configuration>
                 <executions>
                     <execution>
