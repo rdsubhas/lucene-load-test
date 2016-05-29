@@ -1,0 +1,14 @@
+syntax = "proto3";
+package grpc;
+
+service LookupService {
+    rpc lookup (LookupRequest) returns (LookupReply) {}
+}
+
+message LookupRequest {
+    string doc_id = 1;
+}
+
+message LookupReply {
+    int32 doc_id = 1;
+}
