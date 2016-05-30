@@ -5,6 +5,8 @@ services:
     build: .
     working_dir: /src
     command: "/usr/bin/mvn compile exec:java"
+    ports:
+      - "57001:57001"
     volumes:
       - ".:/src"
       - "~/.m2:/root/.m2"
